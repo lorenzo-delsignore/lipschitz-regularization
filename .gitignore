@@ -2,3 +2,5 @@
 /*.egg-info
 checkpoints
 .vscode
+__pycache__
+human_seg
