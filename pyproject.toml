@@ -9,5 +9,9 @@ readme = "README.md"
 dependencies = [
     "cython",
     "numpy",
-    "matplotlib"
+    "matplotlib",
+    "plyfile",
+    "skimage",
+    "scikit-image",
+    "trimesh"
 ]
