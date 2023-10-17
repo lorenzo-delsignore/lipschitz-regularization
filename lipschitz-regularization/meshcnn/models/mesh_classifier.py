@@ -58,17 +58,18 @@ class ClassifierModel:
         if not self.is_train or opt.continue_train:
             self.load_network(opt.which_epoch)
 
-    def set_input(self, data):
+    def set_input(self, data, label=True):
+        if label:
+            labels = torch.from_numpy(data["label"]).long()
+            self.labels = labels.to(self.device)
+            if self.opt.dataset_mode == "segmentation" and not self.is_train:
+                self.soft_label = torch.from_numpy(data["soft_label"])
         input_edge_features = torch.from_numpy(data["edge_features"]).float()
-        labels = torch.from_numpy(data["label"]).long()
         # set inputs
         self.edge_features = input_edge_features.to(self.device).requires_grad_(
             self.is_train
         )
-        self.labels = labels.to(self.device)
         self.mesh = data["mesh"]
-        if self.opt.dataset_mode == "segmentation" and not self.is_train:
-            self.soft_label = torch.from_numpy(data["soft_label"])
 
     def forward(self):
         out = self.net(self.edge_features, self.mesh)
