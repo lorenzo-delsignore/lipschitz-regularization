@@ -120,7 +120,34 @@ class BaseOptions:
     def parse(self):
         if not self.initialized:
             self.initialize()
-        self.opt, unknown = self.parser.parse_known_args()
+        command_line_arguments = [
+            "--dataroot",
+            "D:\\Datasets\\human_seg",
+            "--name",
+            "human_seg",
+            "--arch",
+            "meshunet",
+            "--dataset_mode",
+            "segmentation",
+            "--ncf",
+            "32",
+            "64",
+            "128",
+            "256",
+            "--ninput_edges",
+            "2280",
+            "--pool_res",
+            "1800",
+            "1350",
+            "600",
+            "--resblocks",
+            "3",
+            "--batch_size",
+            "12",
+            "--export_folder",
+            "meshes"
+        ]
+        self.opt, unknown = self.parser.parse_known_args(command_line_arguments)
         self.opt.is_train = self.is_train  # train or test
 
         str_ids = self.opt.gpu_ids.split(",")
