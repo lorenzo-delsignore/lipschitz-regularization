@@ -21,8 +21,8 @@ class BaseDataset(data.Dataset):
         ninput_channels: N
         (here N=5)
         """
-
-        mean_std_cache = os.path.join(self.root, "mean_std_cache.p")
+        #self.root or self.data_source
+        mean_std_cache = os.path.join(self.data_source, "mean_std_cache.p")
         if not os.path.isfile(mean_std_cache):
             print("computing mean std from train data...")
             # doesn't run augmentation during m/std computation

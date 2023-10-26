@@ -248,7 +248,7 @@ def append_parameter_magnitudes(param_mag_log, model):
         param_mag_log[name].append(param.data.norm().item())
 
 
-def main_function(experiment_directory, continue_from, batch_split):
+def main_function(experiment_directory, continue_from, batch_split, autoencoder):
 
     logging.debug("running " + experiment_directory)
 
@@ -362,33 +362,36 @@ def main_function(experiment_directory, continue_from, batch_split):
 
     logging.debug(decoder)
 
-    lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
-    torch.nn.init.normal_(
-        lat_vecs.weight.data,
-        0.0,
-        get_spec_with_default(specs, "CodeInitStdDev", 1.0) / math.sqrt(latent_size),
-    )
-
-    logging.debug(
-        "initialized with mean magnitude {}".format(
-            get_mean_latent_vector_magnitude(lat_vecs)
+    if autoencoder:
+        lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+        torch.nn.init.normal_(
+            lat_vecs.weight.data,
+            0.0,
+            get_spec_with_default(specs, "CodeInitStdDev", 1.0) / math.sqrt(latent_size),
         )
-    )
+
+        logging.debug(
+            "initialized with mean magnitude {}".format(
+                get_mean_latent_vector_magnitude(lat_vecs)
+            )
+        )
 
     loss_l1 = torch.nn.L1Loss(reduction="sum")
 
-    optimizer_all = torch.optim.Adam(
-        [
+    optimize = [
             {
                 "params": decoder.parameters(),
                 "lr": lr_schedules[0].get_learning_rate(0),
-            },
-            {
+            }
+    ]
+
+    if autoencoder:
+            optimize.append(   {
                 "params": lat_vecs.parameters(),
                 "lr": lr_schedules[1].get_learning_rate(0),
-            },
-        ]
-    )
+            })
+
+    optimizer_all = torch.optim.Adam(optimize)
 
     loss_log = []
     lr_log = []
@@ -401,10 +404,10 @@ def main_function(experiment_directory, continue_from, batch_split):
     if continue_from is not None:
 
         logging.info('continuing from "{}"'.format(continue_from))
-
-        lat_epoch = load_latent_vectors(
-            experiment_directory, continue_from + ".pth", lat_vecs
-        )
+        if autoencoder:
+            lat_epoch = load_latent_vectors(
+                experiment_directory, continue_from + ".pth", lat_vecs
+            )
 
         model_epoch = ws.load_model_parameters(
             experiment_directory, continue_from, decoder
@@ -488,8 +491,10 @@ def main_function(experiment_directory, continue_from, batch_split):
 
             for i in range(batch_split):
 
-                batch_vecs = lat_vecs(indices[i])
+                if autoencoder:
+                    batch_vecs = lat_vecs(indices[i])
 
+                #torch.Size([80000, 256])
                 input = torch.cat([batch_vecs, xyz[i]], dim=1)
 
                 # NN optimization
@@ -581,6 +586,13 @@ if __name__ == "__main__":
         + "subbatches. This allows for training with large effective batch "
         + "sizes in memory constrained environments.",
     )
+    arg_parser.add_argument(
+        "--autoencoder",
+        "-a",
+        dest="autoencoder",
+        help="Use MeshCNN latent codes or fixed embeddings"
+
+    )
 
     deep_sdf.add_common_args(arg_parser)
 
@@ -588,4 +600,4 @@ if __name__ == "__main__":
 
     deep_sdf.configure_logging(args)
 
-    main_function(args.experiment_directory, args.continue_from, int(args.batch_split))
+    main_function(args.experiment_directory, args.continue_from, int(args.batch_split), args.autoencoder)

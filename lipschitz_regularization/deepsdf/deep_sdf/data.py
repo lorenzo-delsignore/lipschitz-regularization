@@ -8,9 +8,13 @@ import os
 import random
 import torch
 import torch.utils.data
+from pathlib import Path
 
-import deep_sdf.workspace as ws
-
+import lipschitz_regularization.deepsdf.deep_sdf.workspace as ws
+from lipschitz_regularization.meshcnn.util.util import pad
+from lipschitz_regularization.meshcnn.options.test_options import TestOptions
+from lipschitz_regularization.meshcnn.data.base_dataset import BaseDataset
+from lipschitz_regularization.meshcnn.models.layers.mesh import Mesh
 
 def get_instance_filenames(data_source, split):
     npzfiles = []
@@ -18,7 +22,7 @@ def get_instance_filenames(data_source, split):
         for class_name in split[dataset]:
             for instance_name in split[dataset][class_name]:
                 instance_filename = os.path.join(
-                    dataset, class_name, instance_name + ".npz"
+                    dataset, class_name, instance_name, instance_name + ".npz"
                 )
                 if not os.path.isfile(
                     os.path.join(data_source, ws.sdf_samples_subdir, instance_filename)
@@ -31,6 +35,19 @@ def get_instance_filenames(data_source, split):
                     )
                 npzfiles += [instance_filename]
     return npzfiles
+
+
+def get_obj_filenames(split):
+    meshes_paths = []
+    for dataset in split:
+        for class_name in split[dataset]:
+            for instance_name in split[dataset][class_name]:
+                instance_folder = os.path.join(
+                    dataset, class_name, instance_name
+                )
+                meshes_path = list(Path(instance_folder).glob('*.obj'))[0]
+                meshes_paths += [meshes_path]
+    return meshes_paths
 
 
 class NoMeshFileError(RuntimeError):
@@ -117,7 +134,7 @@ def unpack_sdf_samples_from_ram(data, subsample=None):
     return samples
 
 
-class SDFSamples(torch.utils.data.Dataset):
+class SDFSamples(BaseDataset):
     def __init__(
         self,
         data_source,
@@ -127,10 +144,18 @@ class SDFSamples(torch.utils.data.Dataset):
         print_filename=False,
         num_files=1000000,
     ):
+        BaseDataset.__init__(self, TestOptions().parse())
         self.subsample = subsample
 
         self.data_source = data_source
+        self.load_ram = load_ram
+
+        #self.obj = get_obj_filenames(split)
         self.npyfiles = get_instance_filenames(data_source, split)
+        #self.size = len(self.obj)
+        #cambiare dopo quando il train metto l'altro
+        self.size = len(self.npyfiles)
+        #self.get_mean_std()
 
         logging.debug(
             "using "
@@ -138,8 +163,6 @@ class SDFSamples(torch.utils.data.Dataset):
             + " shapes from data source "
             + data_source
         )
-
-        self.load_ram = load_ram
 
         if load_ram:
             self.loaded_data = []
@@ -156,16 +179,34 @@ class SDFSamples(torch.utils.data.Dataset):
                 )
 
     def __len__(self):
-        return len(self.npyfiles)
+        return self.size
+
 
     def __getitem__(self, idx):
-        filename = os.path.join(
+        filename_npz = os.path.join(
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
+        #filename_obj = os.path.join(
+        #    self.data_source, ws.sdf_samples_subdir, self.obj[idx]
+        #)
+        # mesh = Mesh(
+        #     file=filename_obj,
+        #     opt=self.opt,
+        #     hold_history=True,
+        #     export_folder=self.opt.export_folder,
+        # )
+        meta = {}
+        # meta["mesh"] = mesh
+        # # get edge features
+        # edge_features = mesh.extract_features()
+        #edge_features = pad(edge_features, self.opt.ninput_edges)
+        #meta["edge_features"] = (edge_features - self.mean) / self.std
+
+        meta["samples"] = unpack_sdf_samples(filename_npz, self.subsample)
+        meta["idx"] = idx
         if self.load_ram:
-            return (
-                unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample),
-                idx,
-            )
+            meta["samples"] = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
+            return meta
         else:
-            return unpack_sdf_samples(filename, self.subsample), idx
+            meta["samples"] = unpack_sdf_samples(filename_npz, self.subsample)
+            return meta

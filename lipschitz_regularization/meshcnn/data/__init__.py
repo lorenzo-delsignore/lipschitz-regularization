@@ -1,12 +1,12 @@
 import torch.utils.data
-from data.base_dataset import collate_fn
+from lipschitz_regularization.meshcnn.data.base_dataset import collate_fn
 
 
 def CreateDataset(opt):
     """loads dataset class"""
 
     if opt.dataset_mode == "segmentation":
-        from data.segmentation_data import SegmentationData
+        from lipschitz_regularization.meshcnn.data.segmentation_data import SegmentationData
 
         dataset = SegmentationData(opt)
     elif opt.dataset_mode == "classification":

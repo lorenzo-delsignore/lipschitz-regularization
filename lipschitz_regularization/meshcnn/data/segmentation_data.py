@@ -1,9 +1,9 @@
 import os
 import torch
-from data.base_dataset import BaseDataset
-from util.util import is_mesh_file, pad
+from lipschitz_regularization.meshcnn.data.base_dataset import BaseDataset
+from lipschitz_regularization.meshcnn.util.util import is_mesh_file, pad
 import numpy as np
-from models.layers.mesh import Mesh
+from lipschitz_regularization.meshcnn.models.layers.mesh import Mesh
 
 
 class SegmentationData(BaseDataset):
