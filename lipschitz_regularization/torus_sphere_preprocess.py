@@ -11,7 +11,8 @@ def sphere(xyz):
 def torus(xyz):
     t = torch.tensor([0.2, 0.4], device=xyz.device)
     c = torch.tensor([[0.5, 0.5, 0.5]], device=xyz.device)
-    q = torch.cat([xyz[..., [0, 2]].norm(dim=-1, keepdim=True) - t[0:1, None], xyz[..., 1:2]], dim=-1)
+    p = xyz - c
+    q = torch.cat([p[..., [0, 2]].norm(dim=-1, keepdim=True) - t[0:1, None], p[..., 1:2]], dim=-1)
     return q.norm(dim=-1, keepdim=True) - t[1:, None]
 
 
