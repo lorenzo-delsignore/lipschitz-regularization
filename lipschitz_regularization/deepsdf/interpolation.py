@@ -154,7 +154,7 @@ if __name__ == "__main__":
         start = time.time()
         with torch.no_grad():
             filename = lipschitz_regularization.deepsdf.deep_sdf.mesh.create_mesh(
-                decoder, interpolated_vertices, str(path_folder_A / (path_sdf_A.stem + "_interpolation" + t)), N=256, max_batch=int(2 ** 18)
+                decoder, interpolated_vertices, str(path_folder_A / (path_sdf_A.stem + "_interpolation" + t_value)), N=256, max_batch=int(2 ** 18)
                     )
             logging.debug("total time: {}".format(time.time() - start))
         mesh = trimesh.load(filename)
