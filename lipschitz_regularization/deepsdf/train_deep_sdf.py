@@ -17,7 +17,6 @@ import lipschitz_regularization.deepsdf.deep_sdf.workspace as ws
 from lipschitz_regularization.meshcnn.options.test_options import TestOptions
 from lipschitz_regularization.meshcnn.models import create_model
 from lipschitz_regularization.meshcnn.data.base_dataset import collate_fn
-from lipschitz_regularization.deepsdf.networks.deep_sdf_decoder import CustomLinearLayer
 
 
 
@@ -243,14 +242,6 @@ def append_parameter_magnitudes(param_mag_log, model):
             param_mag_log[name] = []
         param_mag_log[name].append(param.data.norm().item())
 
-def get_lipschitz_loss(model):
-    loss_lip = 1.0
-    for name, layer in model.named_modules():
-        if isinstance(layer, CustomLinearLayer):
-            c = layer.c
-            loss_lip = loss_lip * F.softplus(c)
-    return loss_lip
-
 
 def main_function(experiment_directory, continue_from, batch_split, autoencoder):
     logging.debug("running " + experiment_directory)
@@ -343,9 +334,6 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
 
     logging.info("training with {} GPU(s)".format(torch.cuda.device_count()))
 
-    # if torch.cuda.device_count() > 1:
-    decoder = torch.nn.DataParallel(decoder)
-
     num_epochs = specs["NumEpochs"]
     log_frequency = get_spec_with_default(specs, "LogFrequency", 10)
 
@@ -365,6 +353,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         shuffle=True,
         num_workers=num_data_loader_threads,
         collate_fn=collate_fn,
+        pin_memory=True
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
@@ -377,6 +366,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
 
     optimize = [
         {
+
             "params": decoder.parameters(),
             "lr": 1e-4
         }
@@ -384,13 +374,16 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
 
     if autoencoder == True:
         print("Using torch.nn.Embedding")
-        lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
-        torch.nn.init.normal_(
-            lat_vecs.weight.data,
-            0.0,
-            get_spec_with_default(specs, "CodeInitStdDev", 1.0)
-            / math.sqrt(latent_size),
-        )
+        pretrained_embeddings = torch.tensor([[0.],[1.]])
+
+        #lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+        lat_vecs = torch.nn.Embedding.from_pretrained(pretrained_embeddings)
+        # torch.nn.init.normal_(
+        #     lat_vecs.weight.data,
+        #     0.0,
+        #     get_spec_with_default(specs, "CodeInitStdDev", 1.0)
+        #     / math.sqrt(latent_size),
+        # )
 
         logging.debug(
             "initialized with mean magnitude {}".format(
@@ -418,8 +411,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         opt.serial_batches = True
         model = create_model(opt)
 
-    loss_l1 = torch.nn.MSELoss(reduction="sum")
-    print(optimize)
+    loss_mse = torch.nn.MSELoss()
     optimizer_all = torch.optim.Adam(decoder.parameters(), lr=1e-4)
 
     loss_log = []
@@ -488,9 +480,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
             sdf_data = torch.tensor(data["samples"].reshape(-1, 4))
             num_sdf_samples = sdf_data.shape[0]
             xyz = sdf_data[:, 0:3]
-            sdf_gt = sdf_data[:, 3].unsqueeze(1)
-            if enforce_minmax:
-                sdf_gt = torch.clamp(sdf_gt, minT, maxT)
+            sdf_gt = sdf_data[:, 3].unsqueeze(1).to(device)
             # Use torch.nn.Embedding or MeshCNN
             if autoencoder == True:
                 indices = torch.tensor(data["idx"])
@@ -498,47 +488,36 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
                 model.set_input(data, label=False)
                 latent_codes = torch.mean(model.forward()[1], axis=-1)
                 indices = torch.arange(scene_per_batch)
-
-            indices = torch.chunk(
-                indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1),
-                batch_split,
-            )
-            xyz = torch.chunk(xyz, batch_split)
-            sdf_gt = torch.chunk(sdf_gt, batch_split)
+            indices = indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1)
             batch_loss = 0.0
             optimizer_all.zero_grad()
+            if autoencoder == True:
+                batch_vecs = lat_vecs(indices)
+            else:
+                batch_vecs = torch.index_select(
+                    latent_codes.cpu(), dim=0, index=indices
+                )
+            input = torch.cat([batch_vecs, xyz], dim=1).to(device)
+            # NN optimization
+            pred_sdf = decoder(input)
+            chunk_loss = loss_mse(pred_sdf, sdf_gt)
+            if do_code_regularization:
+                print("Sto usando la code regularization")
+                l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1))
+                reg_loss = (
+                    code_reg_lambda * min(1, epoch / 100) * l2_size_loss
+                ) / num_sdf_samples
+                chunk_loss = chunk_loss + reg_loss.to(device)
+            logging.debug("recon_loss = {}".format(loss_mse(pred_sdf, sdf_gt)))
 
-            for i in range(batch_split):
-                if autoencoder == True:
-                    batch_vecs = lat_vecs(indices[i])
-                else:
-                    batch_vecs = torch.index_select(
-                        latent_codes.cpu(), dim=0, index=indices[i]
-                    )
 
-                input = torch.cat([batch_vecs, xyz[i]], dim=1).to(device)
+            chunk_loss = chunk_loss + alpha * decoder.get_lipschitz_loss()
 
-                # NN optimization
-                pred_sdf = decoder(input)
-                if enforce_minmax:
-                    pred_sdf = torch.clamp(pred_sdf, minT, maxT)
+            logging.debug("with_lip_loss = {}".format(alpha * decoder.get_lipschitz_loss()))
 
+            chunk_loss.backward()
 
-                chunk_loss = loss_l1(pred_sdf, sdf_gt[i].to(device)) / num_sdf_samples
-
-                if do_code_regularization:
-                    print("Sto usando la code regularization")
-                    l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1)).to(device)
-                    reg_loss = (
-                        code_reg_lambda * min(1, epoch / 100) * l2_size_loss
-                    ) / num_sdf_samples
-                    chunk_loss = chunk_loss + reg_loss.to(device)
-
-                chunk_loss = chunk_loss + alpha * get_lipschitz_loss(decoder).to(device)
-
-                chunk_loss.backward()
-
-                batch_loss += chunk_loss.item()
+            batch_loss += chunk_loss.item()
 
             logging.debug("loss = {}".format(batch_loss))
 
@@ -551,12 +530,9 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
             optimizer_all.step()
 
         end = time.time()
-
         seconds_elapsed = end - start
         timing_log.append(seconds_elapsed)
-
-        lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
-
+        #lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
         if autoencoder == True:
             lat_mag_log.append(get_mean_latent_vector_magnitude(lat_vecs))
 

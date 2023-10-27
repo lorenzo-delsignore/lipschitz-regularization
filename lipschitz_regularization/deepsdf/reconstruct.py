@@ -58,8 +58,6 @@ def reconstruct(
         xyz = sdf_data[:, 0:3]
         sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
-        sdf_gt = torch.clamp(sdf_gt, -clamp_dist, clamp_dist)
-
         adjust_learning_rate(lr, optimizer, e, decreased_by, adjust_lr_every)
 
         optimizer.zero_grad()
@@ -142,7 +140,7 @@ if __name__ == "__main__":
 
     arg_parser.add_argument(
         "--use_saved_latent_codes",
-        "-uslc",
+        "-u",
         dest="use_saved_latent_codes",
         action="store_true",
         help="Skip meshes which have already been reconstructed.",
@@ -178,7 +176,6 @@ if __name__ == "__main__":
 
     decoder = arch.Decoder(latent_size, **specs["NetworkSpecs"])
 
-    decoder = torch.nn.DataParallel(decoder)
 
     saved_model_state = torch.load(
         os.path.join(
@@ -189,7 +186,7 @@ if __name__ == "__main__":
 
     decoder.load_state_dict(saved_model_state["model_state_dict"])
 
-    decoder = decoder.module.cuda()
+    decoder = decoder.cuda()
 
 
 
@@ -244,9 +241,11 @@ if __name__ == "__main__":
 
         for data in sdf_loader:
             latent_code = torch.tensor(load_latet_codes["latent_codes"]["weight"][data["idx"]]).cuda()
-            mesh_filename = Path(data["mesh"][0].file).stem
-            mesh_folder = Path(data["mesh"][0].file).parent
-            mesh_path = mesh_folder / mesh_filename
+            # mesh_filename = Path(data["mesh"][0].file).stem
+            # mesh_folder = Path(data["mesh"][0].file).parent
+            # mesh_path = mesh_folder / mesh_filename
+            mesh_path = Path(r"C:\Users\loren\Desktop\RepoBitbucket\lipschitz-regularization\lipschitz_regularization\deepsdf\data\simple_dataset\train") / str(data["idx"][0]) / str(data["idx"][0])
+
             start = time.time()
             with torch.no_grad():
                 lipschitz_regularization.deepsdf.deep_sdf.mesh.create_mesh(
