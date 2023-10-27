@@ -72,8 +72,6 @@ def reconstruct(
         if e == 0:
             pred_sdf = decoder(inputs)
 
-        pred_sdf = torch.clamp(pred_sdf, -clamp_dist, clamp_dist)
-
         loss = loss_l1(pred_sdf, sdf_gt)
         if l2reg:
             loss += 1e-4 * torch.mean(latent.pow(2))
