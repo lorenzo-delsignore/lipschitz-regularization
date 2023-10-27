@@ -9,7 +9,7 @@ def sphere(xyz):
     return (xyz - c).norm(dim=-1, keepdim=True) - 0.3
 
 def torus(xyz):
-    t = torch.tensor([0.2, 0.4], device=xyz.device)
+    t = torch.tensor([0.2, 0.1], device=xyz.device)
     c = torch.tensor([[0.5, 0.5, 0.5]], device=xyz.device)
     p = xyz - c
     q = torch.cat([p[..., [0, 2]].norm(dim=-1, keepdim=True) - t[0:1, None], p[..., 1:2]], dim=-1)
