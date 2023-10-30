@@ -4,6 +4,8 @@
 import logging
 import torch
 
+from lipschitz_regularization.torus_sphere_preprocess import torus
+from lipschitz_regularization.torus_sphere_preprocess import sphere
 
 def add_common_args(arg_parser):
     arg_parser.add_argument(
@@ -48,15 +50,14 @@ def configure_logging(args):
         logger.addHandler(file_logger_handler)
 
 
-def decode_sdf(decoder, latent_vector, queries):
+def decode_sdf(decoder, latent_vector, queries, no_model=False):
     num_samples = queries.shape[0]
-
     if latent_vector is None:
         inputs = queries
     else:
         latent_repeat = latent_vector.expand(num_samples, -1)
         inputs = torch.cat([latent_repeat, queries], 1)
-    lipschitz = True
-    sdf = decoder(inputs)
+    if no_model == False:
+        sdf = decoder(inputs)
 
     return sdf
