@@ -63,7 +63,7 @@ class Decoder(torch.nn.Module):
             self.layers.append(LipschitzLinear(dims[ii], dims[ii+1]))
 
         self.layer_output = LipschitzLinear(dims[-2], dims[-1])
-        self.tahn = torch.nn.Tanh()
+        self.tanh = torch.nn.Tanh()
 
     def get_lipschitz_loss(self):
         loss_lipc = 1.0
@@ -78,5 +78,5 @@ class Decoder(torch.nn.Module):
         x = torch.cat([latent_vecs, xyz], 1)
         for ii in range(len(self.layers)):
             x = self.layers[ii](x)
-            x = self.tahn(x)
+            x = self.tanh(x)
         return self.layer_output(x)

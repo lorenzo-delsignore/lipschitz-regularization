@@ -29,7 +29,7 @@ class Decoder(torch.nn.Module):
             self.layers.append(torch.nn.Linear(dims[ii], dims[ii+1]))
 
         self.layer_output = torch.nn.Linear(dims[-2], dims[-1])
-        self.relu = torch.nn.Tanh()
+        self.tanh = torch.nn.Tanh()
 
     def forward(self, x):
         xyz = x[:, -3:] * 100
@@ -37,5 +37,5 @@ class Decoder(torch.nn.Module):
         x = torch.cat([latent_vecs, xyz], 1)
         for ii in range(len(self.layers)):
             x = self.layers[ii](x)
-            x = self.relu(x)
+            x = self.tanh(x)
         return self.layer_output(x)
