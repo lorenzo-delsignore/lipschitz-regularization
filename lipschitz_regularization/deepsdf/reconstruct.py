@@ -230,7 +230,7 @@ if __name__ == "__main__":
         sdf_dataset,
         batch_size=1,
         shuffle=True,
-        num_workers=1,
+        num_workers=0,
         collate_fn=collate_fn,
         )
 
