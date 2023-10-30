@@ -18,7 +18,6 @@ from lipschitz_regularization.meshcnn.models import create_model
 from lipschitz_regularization.meshcnn.data.base_dataset import collate_fn
 
 
-
 class LearningRateSchedule:
     def get_learning_rate(self, epoch):
         pass
@@ -87,8 +86,6 @@ def get_learning_rate_schedules(specs):
             )
 
     return schedules
-
-
 
 
 def save_model(experiment_directory, filename, decoder, epoch):
@@ -280,7 +277,9 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         save_model(experiment_directory, str(epoch) + ".pth", decoder, epoch)
         save_optimizer(experiment_directory, str(epoch) + ".pth", optimizer_all, epoch)
         if autoencoder == True:
-            save_latent_vectors(experiment_directory, str(epoch) + ".pth", lat_vecs, epoch)
+            save_latent_vectors(
+                experiment_directory, str(epoch) + ".pth", lat_vecs, epoch
+            )
 
     def signal_handler(sig, frame):
         logging.info("Stopping early...")
@@ -338,7 +337,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         shuffle=True,
         num_workers=num_data_loader_threads,
         collate_fn=collate_fn,
-        pin_memory=True
+        pin_memory=True,
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
@@ -350,18 +349,14 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
     logging.debug(decoder)
 
     optimize = [
-        {
-
-            "params": decoder.parameters(),
-            "lr": lr_schedules[0].get_learning_rate(0)
-        }
+        {"params": decoder.parameters(), "lr": lr_schedules[0].get_learning_rate(0)}
     ]
 
     if autoencoder == True:
         print("Using torch.nn.Embedding")
-        pretrained_embeddings = torch.tensor([[0.],[1.]])
+        pretrained_embeddings = torch.tensor([[0.0], [1.0]])
         lat_vecs = torch.nn.Embedding.from_pretrained(pretrained_embeddings)
-        #lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+        # lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
         # torch.nn.init.normal_(
         #     lat_vecs.weight.data,
         #     0.0,
@@ -447,8 +442,6 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         )
     )
 
-
-
     for epoch in range(start_epoch, num_epochs + 1):
         start = time.time()
 
@@ -492,7 +485,9 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
                 logging.debug("latent_loss = {}".format(reg_loss))
             logging.debug("recon_loss = {}".format(loss_mse(pred_sdf, sdf_gt)))
             chunk_loss = chunk_loss + alpha * decoder.get_lipschitz_loss()
-            logging.debug("with_lip_loss = {}".format(alpha * decoder.get_lipschitz_loss()))
+            logging.debug(
+                "with_lip_loss = {}".format(alpha * decoder.get_lipschitz_loss())
+            )
             chunk_loss.backward()
             batch_loss += chunk_loss.item()
             logging.debug("loss = {}".format(batch_loss))
@@ -560,7 +555,7 @@ if __name__ == "__main__":
         "-a",
         dest="autoencoder",
         help="Use MeshCNN latent codes or fixed embeddings",
-        action="store_true"
+        action="store_true",
     )
 
     lipschitz_regularization.deepsdf.deep_sdf.add_common_args(arg_parser)

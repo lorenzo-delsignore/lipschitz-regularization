@@ -50,11 +50,12 @@ def reconstruct(
     loss_l1 = torch.nn.MSELoss()
 
     for e in range(num_iterations):
-
         decoder.eval()
-        sdf_data = lipschitz_regularization.deepsdf.deep_sdf.data.unpack_sdf_samples_from_ram(
-            test_sdf, num_samples
-        ).cuda()
+        sdf_data = (
+            lipschitz_regularization.deepsdf.deep_sdf.data.unpack_sdf_samples_from_ram(
+                test_sdf, num_samples
+            ).cuda()
+        )
         xyz = sdf_data[:, 0:3]
         sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
@@ -88,7 +89,6 @@ def reconstruct(
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser(
         description="Use a trained DeepSDF decoder to reconstruct a shape given SDF "
         + "samples."
@@ -144,7 +144,6 @@ if __name__ == "__main__":
         help="Skip meshes which have already been reconstructed.",
     )
 
-
     lipschitz_regularization.deepsdf.deep_sdf.add_common_args(arg_parser)
 
     args = arg_parser.parse_args()
@@ -168,12 +167,14 @@ if __name__ == "__main__":
 
     specs = json.load(open(specs_filename))
 
-    arch = __import__("lipschitz_regularization.deepsdf.networks." + specs["NetworkArch"], fromlist=["Decoder"])
+    arch = __import__(
+        "lipschitz_regularization.deepsdf.networks." + specs["NetworkArch"],
+        fromlist=["Decoder"],
+    )
 
     latent_size = specs["CodeLength"]
 
     decoder = arch.Decoder(latent_size, **specs["NetworkSpecs"])
-
 
     saved_model_state = torch.load(
         os.path.join(
@@ -186,12 +187,14 @@ if __name__ == "__main__":
 
     decoder = decoder.cuda()
 
-
-
     with open(args.split_filename, "r") as f:
         split = json.load(f)
 
-    npz_filenames = lipschitz_regularization.deepsdf.deep_sdf.data.get_instance_filenames(args.data_source, split)
+    npz_filenames = (
+        lipschitz_regularization.deepsdf.deep_sdf.data.get_instance_filenames(
+            args.data_source, split
+        )
+    )
 
     random.shuffle(npz_filenames)
 
@@ -224,35 +227,42 @@ if __name__ == "__main__":
     if args.use_saved_latent_codes == True:
         data_source = Path(args.data_source).parent
         sdf_dataset = lipschitz_regularization.deepsdf.deep_sdf.data.SDFSamples(
-        str(data_source), split, 10000, load_ram=False
+            str(data_source), split, 10000, load_ram=False
         )
         sdf_loader = data_utils.DataLoader(
-        sdf_dataset,
-        batch_size=1,
-        shuffle=True,
-        num_workers=0,
-        collate_fn=collate_fn,
+            sdf_dataset,
+            batch_size=1,
+            shuffle=True,
+            num_workers=0,
+            collate_fn=collate_fn,
         )
 
         latent_filename = Path(data_source) / "train" / "LatentCodes" / "latest.pth"
         load_latet_codes = torch.load(latent_filename)
 
         for data in sdf_loader:
-            latent_code = torch.tensor(load_latet_codes["latent_codes"]["weight"][data["idx"]]).cuda()
+            latent_code = torch.tensor(
+                load_latet_codes["latent_codes"]["weight"][data["idx"]]
+            ).cuda()
             # mesh_filename = Path(data["mesh"][0].file).stem
             # mesh_folder = Path(data["mesh"][0].file).parent
             # mesh_path = mesh_folder / mesh_filename
-            mesh_path = Path(r"C:\Users\loren\Desktop\RepoBitbucket\lipschitz-regularization\lipschitz_regularization\deepsdf\data\simple_dataset\train") / str(data["idx"][0]) / str(data["idx"][0])
+            mesh_path = (
+                Path(
+                    r"C:\Users\loren\Desktop\RepoBitbucket\lipschitz-regularization\lipschitz_regularization\deepsdf\data\simple_dataset\train"
+                )
+                / str(data["idx"][0])
+                / str(data["idx"][0])
+            )
 
             start = time.time()
             with torch.no_grad():
                 lipschitz_regularization.deepsdf.deep_sdf.mesh.create_mesh(
-                    decoder, latent_code, str(mesh_path), N=256, max_batch=int(2 ** 18)
+                    decoder, latent_code, str(mesh_path), N=256, max_batch=int(2**18)
                 )
                 logging.debug("total time: {}".format(time.time() - start))
     else:
         for ii, npz in enumerate(npz_filenames):
-
             if "npz" not in npz:
                 continue
 
@@ -260,18 +270,18 @@ if __name__ == "__main__":
 
             logging.debug("loading {}".format(npz))
 
-
-
-            data_sdf = lipschitz_regularization.deepsdf.deep_sdf.data.read_sdf_samples_into_ram(full_filename)
+            data_sdf = lipschitz_regularization.deepsdf.deep_sdf.data.read_sdf_samples_into_ram(
+                full_filename
+            )
 
             for k in range(repeat):
-
                 if rerun > 1:
                     mesh_filename = os.path.join(
                         reconstruction_meshes_dir, npz[:-4] + "-" + str(k + rerun)
                     )
                     latent_filename = os.path.join(
-                        reconstruction_codes_dir, npz[:-4] + "-" + str(k + rerun) + ".pth"
+                        reconstruction_codes_dir,
+                        npz[:-4] + "-" + str(k + rerun) + ".pth",
                     )
                 else:
                     mesh_filename = os.path.join(reconstruction_meshes_dir, npz[:-4])
@@ -319,7 +329,11 @@ if __name__ == "__main__":
                     start = time.time()
                     with torch.no_grad():
                         lipschitz_regularization.deepsdf.deep_sdf.mesh.create_mesh(
-                            decoder, latent, mesh_filename, N=256, max_batch=int(2 ** 18)
+                            decoder,
+                            latent,
+                            mesh_filename,
+                            N=256,
+                            max_batch=int(2**18),
                         )
                     logging.debug("total time: {}".format(time.time() - start))
 

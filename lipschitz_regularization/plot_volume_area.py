@@ -39,7 +39,7 @@ if __name__ == "__main__":
         mesh_path = trimesh.load(mesh_path)
         volume_mlp.append(mesh_path.volume)
         area_mlp.append(mesh_path.area)
-    plt.rcParams.update({'font.size': 20})
+    plt.rcParams.update({"font.size": 20})
     fig, ax = plt.subplots()
     ax.plot(x, area_lipschitz, linestyle="-", color="green", label="Lipschitz MLP")
     ax.plot(x, volume_lipschitz, linestyle="-", color="green", label="Lipschitz MLP")

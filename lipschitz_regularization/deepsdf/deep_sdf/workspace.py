@@ -22,7 +22,6 @@ training_meshes_subdir = "TrainingMeshes"
 
 
 def load_experiment_specifications(experiment_directory):
-
     filename = os.path.join(experiment_directory, specifications_filename)
 
     if not os.path.isfile(filename):
@@ -35,7 +34,6 @@ def load_experiment_specifications(experiment_directory):
 
 
 def load_model_parameters(experiment_directory, checkpoint, decoder):
-
     filename = os.path.join(
         experiment_directory, model_params_subdir, checkpoint + ".pth"
     )
@@ -51,7 +49,6 @@ def load_model_parameters(experiment_directory, checkpoint, decoder):
 
 
 def build_decoder(experiment_directory, experiment_specs):
-
     arch = __import__(
         "networks." + experiment_specs["NetworkArch"], fromlist=["Decoder"]
     )
@@ -66,7 +63,6 @@ def build_decoder(experiment_directory, experiment_specs):
 def load_decoder(
     experiment_directory, experiment_specs, checkpoint, data_parallel=True
 ):
-
     decoder = build_decoder(experiment_directory, experiment_specs)
 
     if data_parallel:
@@ -78,7 +74,6 @@ def load_decoder(
 
 
 def load_latent_vectors(experiment_directory, checkpoint):
-
     filename = os.path.join(
         experiment_directory, latent_codes_subdir, checkpoint + ".pth"
     )
@@ -92,7 +87,6 @@ def load_latent_vectors(experiment_directory, checkpoint):
     data = torch.load(filename)
 
     if isinstance(data["latent_codes"], torch.Tensor):
-
         num_vecs = data["latent_codes"].size()[0]
 
         lat_vecs = []
@@ -102,7 +96,6 @@ def load_latent_vectors(experiment_directory, checkpoint):
         return lat_vecs
 
     else:
-
         num_embeddings, embedding_dim = data["latent_codes"]["weight"].shape
 
         lat_vecs = torch.nn.Embedding(num_embeddings, embedding_dim)
@@ -119,7 +112,6 @@ def get_data_source_map_filename(data_dir):
 def get_reconstructed_mesh_filename(
     experiment_dir, epoch, dataset, class_name, instance_name
 ):
-
     return os.path.join(
         experiment_dir,
         reconstructions_subdir,
@@ -134,7 +126,6 @@ def get_reconstructed_mesh_filename(
 def get_reconstructed_code_filename(
     experiment_dir, epoch, dataset, class_name, instance_name
 ):
-
     return os.path.join(
         experiment_dir,
         reconstructions_subdir,
@@ -147,7 +138,6 @@ def get_reconstructed_code_filename(
 
 
 def get_evaluation_dir(experiment_dir, checkpoint, create_if_nonexistent=False):
-
     dir = os.path.join(experiment_dir, evaluation_subdir, checkpoint)
 
     if create_if_nonexistent and not os.path.isdir(dir):
@@ -157,7 +147,6 @@ def get_evaluation_dir(experiment_dir, checkpoint, create_if_nonexistent=False):
 
 
 def get_model_params_dir(experiment_dir, create_if_nonexistent=False):
-
     dir = os.path.join(experiment_dir, model_params_subdir)
 
     if create_if_nonexistent and not os.path.isdir(dir):
@@ -167,7 +156,6 @@ def get_model_params_dir(experiment_dir, create_if_nonexistent=False):
 
 
 def get_optimizer_params_dir(experiment_dir, create_if_nonexistent=False):
-
     dir = os.path.join(experiment_dir, optimizer_params_subdir)
 
     if create_if_nonexistent and not os.path.isdir(dir):
@@ -177,7 +165,6 @@ def get_optimizer_params_dir(experiment_dir, create_if_nonexistent=False):
 
 
 def get_latent_codes_dir(experiment_dir, create_if_nonexistent=False):
-
     dir = os.path.join(experiment_dir, latent_codes_subdir)
 
     if create_if_nonexistent and not os.path.isdir(dir):

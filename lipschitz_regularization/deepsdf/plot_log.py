@@ -16,7 +16,6 @@ def running_mean(x, N):
 
 
 def load_logs(experiment_directory, type):
-
     logs = torch.load(os.path.join(experiment_directory, ws.logs_filename))
 
     logging.info("latest epoch is {}".format(logs["epoch"]))
@@ -32,7 +31,6 @@ def load_logs(experiment_directory, type):
     fig, ax = plt.subplots()
 
     if type == "loss":
-
         ax.plot(
             np.arange(num_iters) / iters_per_epoch,
             logs["loss"],
@@ -80,7 +78,6 @@ def load_logs(experiment_directory, type):
 
 
 if __name__ == "__main__":
-
     import argparse
 
     arg_parser = argparse.ArgumentParser(description="Plot DeepSDF training logs")

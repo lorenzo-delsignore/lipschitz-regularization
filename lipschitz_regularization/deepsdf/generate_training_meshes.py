@@ -12,7 +12,6 @@ import deep_sdf.workspace as ws
 
 
 def code_to_mesh(experiment_directory, checkpoint, keep_normalized=False):
-
     specs_filename = os.path.join(experiment_directory, "specs.json")
 
     if not os.path.isfile(specs_filename):
@@ -55,7 +54,6 @@ def code_to_mesh(experiment_directory, checkpoint, keep_normalized=False):
     print(len(instance_filenames), " vs ", len(latent_vectors))
 
     for i, latent_vector in enumerate(latent_vectors):
-
         dataset_name, class_name, instance_name = instance_filenames[i].split("/")
         instance_name = instance_name.split(".")[0]
 
@@ -81,7 +79,6 @@ def code_to_mesh(experiment_directory, checkpoint, keep_normalized=False):
         scale = None
 
         if not keep_normalized:
-
             normalization_params = np.load(
                 ws.get_normalization_params_filename(
                     data_source, dataset_name, class_name, instance_name
@@ -96,14 +93,13 @@ def code_to_mesh(experiment_directory, checkpoint, keep_normalized=False):
                 latent_vector,
                 mesh_filename,
                 N=256,
-                max_batch=int(2 ** 18),
+                max_batch=int(2**18),
                 offset=offset,
                 scale=scale,
             )
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser(
         description="Use a trained DeepSDF decoder to generate a mesh given a latent code."
     )

@@ -7,12 +7,11 @@ import trimesh
 from pathlib import Path
 
 
-
 def calculate_signed_distance(obj_file, n_points=100000, sigma_min=0.01, sigma_max=0.2):
     mesh = trimesh.load_mesh(obj_file)
     vertices = mesh.vertices
     centroid = mesh.centroid
-    mesh.vertices = ((vertices - np.expand_dims(centroid,0)) + 1)/2
+    mesh.vertices = ((vertices - np.expand_dims(centroid, 0)) + 1) / 2
     faces = mesh.faces
     sample_points = mesh.sample(n_points)
     closed_points = sample_points + np.random.randn(n_points, 3) * sigma_min
@@ -74,7 +73,7 @@ if __name__ == "__main__":
         new_path_dir.mkdir()
         mesh_path = mesh_path.rename(new_path_dir / mesh_path.name)
         query_points, signed_distances = calculate_signed_distance(mesh_path)
-        write_to_npz(query_points, signed_distances, Path(new_path_dir) / f"{hash_obj}.npz")
+        write_to_npz(
+            query_points, signed_distances, Path(new_path_dir) / f"{hash_obj}.npz"
+        )
         write_to_json(args.ds_name, "", split, hash_obj)
-
-

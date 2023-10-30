@@ -16,6 +16,7 @@ from lipschitz_regularization.meshcnn.options.test_options import TestOptions
 from lipschitz_regularization.meshcnn.data.base_dataset import BaseDataset
 from lipschitz_regularization.meshcnn.models.layers.mesh import Mesh
 
+
 def get_instance_filenames(data_source, split):
     npzfiles = []
     for dataset in split:
@@ -42,10 +43,8 @@ def get_obj_filenames(split):
     for dataset in split:
         for class_name in split[dataset]:
             for instance_name in split[dataset][class_name]:
-                instance_folder = os.path.join(
-                    dataset, class_name, instance_name
-                )
-                meshes_path = list(Path(instance_folder).glob('*.obj'))[0]
+                instance_folder = os.path.join(dataset, class_name, instance_name)
+                meshes_path = list(Path(instance_folder).glob("*.obj"))[0]
                 meshes_paths += [meshes_path]
     return meshes_paths
 
@@ -57,7 +56,7 @@ class NoMeshFileError(RuntimeError):
 
 
 class MultipleMeshFileError(RuntimeError):
-    """"Raised when a there a multiple mesh files in a shape directory"""
+    """ "Raised when a there a multiple mesh files in a shape directory"""
 
     pass
 
@@ -150,12 +149,12 @@ class SDFSamples(BaseDataset):
         self.data_source = data_source
         self.load_ram = load_ram
 
-        #self.obj = get_obj_filenames(split)
+        # self.obj = get_obj_filenames(split)
         self.npyfiles = get_instance_filenames(data_source, split)
-        #self.size = len(self.obj)
-        #cambiare dopo quando il train metto l'altro
+        # self.size = len(self.obj)
+        # cambiare dopo quando il train metto l'altro
         self.size = len(self.npyfiles)
-        #self.get_mean_std()
+        # self.get_mean_std()
 
         logging.debug(
             "using "
@@ -181,14 +180,13 @@ class SDFSamples(BaseDataset):
     def __len__(self):
         return self.size
 
-
     def __getitem__(self, idx):
         filename_npz = os.path.join(
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
-        #filename_obj = os.path.join(
+        # filename_obj = os.path.join(
         #    self.data_source, ws.sdf_samples_subdir, self.obj[idx]
-        #)
+        # )
         # mesh = Mesh(
         #     file=filename_obj,
         #     opt=self.opt,
@@ -199,11 +197,13 @@ class SDFSamples(BaseDataset):
         # meta["mesh"] = mesh
         # # get edge features
         # edge_features = mesh.extract_features()
-        #edge_features = pad(edge_features, self.opt.ninput_edges)
-        #meta["edge_features"] = (edge_features - self.mean) / self.std
+        # edge_features = pad(edge_features, self.opt.ninput_edges)
+        # meta["edge_features"] = (edge_features - self.mean) / self.std
         meta["idx"] = idx
         if self.load_ram:
-            meta["samples"] = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
+            meta["samples"] = unpack_sdf_samples_from_ram(
+                self.loaded_data[idx], self.subsample
+            )
             return meta
         else:
             meta["samples"] = unpack_sdf_samples(filename_npz, self.subsample)

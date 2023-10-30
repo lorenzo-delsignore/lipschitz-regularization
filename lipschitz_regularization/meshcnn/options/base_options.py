@@ -145,9 +145,9 @@ class BaseOptions:
             "--batch_size",
             "12",
             "--export_folder",
-            "meshes"
+            "meshes",
             "--nclasses",
-            "8"
+            "8",
         ]
         self.opt, unknown = self.parser.parse_known_args(command_line_arguments)
         self.opt.is_train = self.is_train  # train or test

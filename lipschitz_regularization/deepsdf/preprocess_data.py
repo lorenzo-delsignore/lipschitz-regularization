@@ -17,7 +17,6 @@ def filter_classes_glob(patterns, classes):
 
     passed_classes = set()
     for pattern in patterns:
-
         passed_classes = passed_classes.union(
             set(filter(lambda x: fnmatch.fnmatch(x, pattern), classes))
         )
@@ -54,7 +53,6 @@ def process_mesh(mesh_filepath, target_filepath, executable, additional_args):
 
 
 def append_data_source_map(data_dir, name, source):
-
     data_source_map_filename = ws.get_data_source_map_filename(data_dir)
 
     print("data sources stored to " + data_source_map_filename)
@@ -79,7 +77,6 @@ def append_data_source_map(data_dir, name, source):
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
         description="Pre-processes data from a data source and append the results to "
@@ -209,7 +206,6 @@ if __name__ == "__main__":
             os.mkdir(target_dir)
 
         for instance_dir in instance_dirs:
-
             shape_dir = os.path.join(class_path, instance_dir)
 
             processed_filepath = os.path.join(target_dir, instance_dir + extension)
@@ -251,7 +247,6 @@ if __name__ == "__main__":
     with concurrent.futures.ThreadPoolExecutor(
         max_workers=int(args.num_threads)
     ) as executor:
-
         for (
             mesh_filepath,
             target_filepath,

@@ -7,24 +7,24 @@ import pickle
 def fill_mesh(mesh2fill, file: str, opt):
     load_path = get_mesh_path(file, opt.num_aug)
     if os.path.exists(load_path):
-        with open(load_path, 'rb') as f:
+        with open(load_path, "rb") as f:
             mesh_data = pickle.load(f)
     else:
         mesh_data = from_scratch(file, opt)
         dict_save = {}
         dict_save["gemm_edges"] = mesh_data.gemm_edges
-        dict_save["vs"]=mesh_data.vs
-        dict_save["edges"]=mesh_data.edges
-        dict_save["edges_count"]=mesh_data.edges_count
-        dict_save["ve"]=mesh_data.ve
-        dict_save["v_mask"]=mesh_data.v_mask
-        dict_save["filename"]=mesh_data.filename
-        dict_save["sides"]=mesh_data.sides
-        dict_save["edge_lengths"]=mesh_data.edge_lengths
-        dict_save["edge_areas"]=mesh_data.edge_areas
-        dict_save["features"]=mesh_data.features
+        dict_save["vs"] = mesh_data.vs
+        dict_save["edges"] = mesh_data.edges
+        dict_save["edges_count"] = mesh_data.edges_count
+        dict_save["ve"] = mesh_data.ve
+        dict_save["v_mask"] = mesh_data.v_mask
+        dict_save["filename"] = mesh_data.filename
+        dict_save["sides"] = mesh_data.sides
+        dict_save["edge_lengths"] = mesh_data.edge_lengths
+        dict_save["edge_areas"] = mesh_data.edge_areas
+        dict_save["features"] = mesh_data.features
 
-        with open(load_path, 'wb') as f:
+        with open(load_path, "wb") as f:
             pickle.dump(dict_save, f)
     mesh2fill.vs = mesh_data["vs"]
     mesh2fill.edges = mesh_data["edges"]

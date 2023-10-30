@@ -13,7 +13,6 @@ import deep_sdf.workspace as ws
 
 
 def evaluate(experiment_directory, checkpoint, data_dir, split_filename):
-
     with open(split_filename, "r") as f:
         split = json.load(f)
 
@@ -88,7 +87,6 @@ def evaluate(experiment_directory, checkpoint, data_dir, split_filename):
 
 
 if __name__ == "__main__":
-
     arg_parser = argparse.ArgumentParser(description="Evaluate a DeepSDF autodecoder")
     arg_parser.add_argument(
         "--experiment",

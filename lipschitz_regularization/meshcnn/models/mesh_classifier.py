@@ -30,7 +30,7 @@ class ClassifierModel:
         self.soft_label = None
         self.loss = None
 
-        #temporary
+        # temporary
         self.nclasses = 8
         opt.input_nc = 5
         opt.nclasses = 8
@@ -74,8 +74,8 @@ class ClassifierModel:
         self.mesh = data["mesh"]
 
     def forward(self):
-        #self.edges_features torch.Size([12, 5, 2280])
-        #self.mesh (1,)
+        # self.edges_features torch.Size([12, 5, 2280])
+        # self.mesh (1,)
         out = self.net(self.edge_features, self.mesh)
         return out
 

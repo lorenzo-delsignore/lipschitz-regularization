@@ -4,15 +4,19 @@ from pathlib import Path
 import argparse
 import json
 
+
 def sphere(xyz):
     c = torch.tensor([[0.5, 0.5, 0.5]], device=xyz.device)
     return (xyz - c).norm(dim=-1, keepdim=True) - 0.3
+
 
 def torus(xyz):
     t = torch.tensor([0.2, 0.1], device=xyz.device)
     c = torch.tensor([[0.5, 0.5, 0.5]], device=xyz.device)
     p = xyz - c
-    q = torch.cat([p[..., [0, 2]].norm(dim=-1, keepdim=True) - t[0:1, None], p[..., 1:2]], dim=-1)
+    q = torch.cat(
+        [p[..., [0, 2]].norm(dim=-1, keepdim=True) - t[0:1, None], p[..., 1:2]], dim=-1
+    )
     return q.norm(dim=-1, keepdim=True) - t[1:, None]
 
 
@@ -20,7 +24,6 @@ def write_to_npz(xyz, sdfs, filename):
     num_vert = len(xyz)
     pos = []
     neg = []
-
 
     for i in range(num_vert):
         v = xyz[i]
@@ -51,6 +54,7 @@ def write_to_json(dataset_name, category, mesh_split, hash):
     with open(file_path, "w") as json_file:
         json.dump(data, json_file, indent=2)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -75,5 +79,3 @@ if __name__ == "__main__":
     write_to_npz(samples, signed_distances_torus, dataset_path / "torus.npz")
     write_to_json(args.ds_name, "", dataset_path / "train", "0")
     write_to_json(args.ds_name, "", dataset_path / "train", "1")
-
-

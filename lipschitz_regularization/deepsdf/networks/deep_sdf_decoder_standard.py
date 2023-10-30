@@ -1,5 +1,6 @@
 import torch
 
+
 class Decoder(torch.nn.Module):
     def __init__(
         self,
@@ -25,8 +26,8 @@ class Decoder(torch.nn.Module):
         dims = [latent_size + 3] + dims + [1]
 
         self.layers = torch.nn.ModuleList()
-        for ii in range(len(dims)-2):
-            self.layers.append(torch.nn.Linear(dims[ii], dims[ii+1]))
+        for ii in range(len(dims) - 2):
+            self.layers.append(torch.nn.Linear(dims[ii], dims[ii + 1]))
 
         self.layer_output = torch.nn.Linear(dims[-2], dims[-1])
         self.tanh = torch.nn.Tanh()

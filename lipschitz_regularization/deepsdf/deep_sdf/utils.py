@@ -7,6 +7,7 @@ import torch
 from lipschitz_regularization.torus_sphere_preprocess import torus
 from lipschitz_regularization.torus_sphere_preprocess import sphere
 
+
 def add_common_args(arg_parser):
     arg_parser.add_argument(
         "--debug",

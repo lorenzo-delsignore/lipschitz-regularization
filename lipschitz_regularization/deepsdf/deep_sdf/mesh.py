@@ -12,7 +12,7 @@ import lipschitz_regularization.deepsdf.deep_sdf.utils
 
 
 def create_mesh(
-    decoder, latent_vec, filename, N=256, max_batch=32 ** 3, offset=None, scale=None
+    decoder, latent_vec, filename, N=256, max_batch=32**3, offset=None, scale=None
 ):
     start = time.time()
     ply_filename = filename
@@ -21,10 +21,10 @@ def create_mesh(
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
     voxel_origin = [0, 0, 0]
-    voxel_size = (1 / (N - 1))
+    voxel_size = 1 / (N - 1)
 
-    overall_index = torch.arange(0, N ** 3, 1, out=torch.LongTensor())
-    samples = torch.zeros(N ** 3, 4)
+    overall_index = torch.arange(0, N**3, 1, out=torch.LongTensor())
+    samples = torch.zeros(N**3, 4)
 
     # transform first 3 columns
     # to be the x, y, z index
@@ -38,7 +38,7 @@ def create_mesh(
     samples[:, 1] = (samples[:, 1] * voxel_size) + voxel_origin[1]
     samples[:, 2] = (samples[:, 2] * voxel_size) + voxel_origin[0]
 
-    num_samples = N ** 3
+    num_samples = N**3
 
     samples.requires_grad = False
 
@@ -48,7 +48,9 @@ def create_mesh(
         sample_subset = samples[head : min(head + max_batch, num_samples), 0:3].cuda()
 
         samples[head : min(head + max_batch, num_samples), 3] = (
-            lipschitz_regularization.deepsdf.deep_sdf.utils.decode_sdf(decoder, latent_vec, sample_subset)
+            lipschitz_regularization.deepsdf.deep_sdf.utils.decode_sdf(
+                decoder, latent_vec, sample_subset
+            )
             .squeeze(1)
             .detach()
             .cpu()
@@ -92,7 +94,6 @@ def convert_sdf_samples_to_ply(
     start_time = time.time()
 
     numpy_3d_sdf_tensor = pytorch_3d_sdf_tensor.numpy()
-
 
     verts, faces, normals, values = skimage.measure.marching_cubes(
         numpy_3d_sdf_tensor, level=0.0, spacing=[voxel_size] * 3

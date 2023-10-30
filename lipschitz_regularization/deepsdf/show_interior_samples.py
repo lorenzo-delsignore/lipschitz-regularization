@@ -9,7 +9,6 @@ import OpenGL.GL as gl
 import pypangolin as pango
 
 if __name__ == "__main__":
-
     npz_filename = sys.argv[1]
 
     data = deep_sdf.data.read_sdf_samples_into_ram(npz_filename)
@@ -41,7 +40,6 @@ if __name__ == "__main__":
     )
 
     while not pango.ShouldQuit():
-
         gl.glClear(gl.GL_COLOR_BUFFER_BIT + gl.GL_DEPTH_BUFFER_BIT)
         d_cam.Activate(s_cam)
 
