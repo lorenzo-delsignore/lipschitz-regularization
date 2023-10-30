@@ -8,7 +8,6 @@ import signal
 import sys
 import os
 import logging
-import math
 import json
 import time
 
@@ -245,27 +244,17 @@ def append_parameter_magnitudes(param_mag_log, model):
 
 def main_function(experiment_directory, continue_from, batch_split, autoencoder):
     logging.debug("running " + experiment_directory)
-
-
-
     specs = ws.load_experiment_specifications(experiment_directory)
-
     alpha = specs["LipschitzRegularization"]
-
     logging.info("Experiment description: \n" + specs["Description"])
-
     data_source = specs["DataSource"]
     train_split_file = specs["TrainSplit"]
-
     arch = __import__(
         "lipschitz_regularization.deepsdf.networks." + specs["NetworkArch"],
         fromlist=["Decoder"],
     )
-
     logging.debug(specs["NetworkSpecs"])
-
     latent_size = specs["CodeLength"]
-
     checkpoints = list(
         range(
             specs["SnapshotFrequency"],
@@ -273,13 +262,10 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
             specs["SnapshotFrequency"],
         )
     )
-
     for checkpoint in specs["AdditionalSnapshots"]:
         checkpoints.append(checkpoint)
     checkpoints.sort()
-
     lr_schedules = get_learning_rate_schedules(specs)
-
     grad_clip = get_spec_with_default(specs, "GradientClipNorm", None)
     if grad_clip is not None:
         logging.debug("clipping gradients to max norm {}".format(grad_clip))
@@ -302,9 +288,8 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
 
     def adjust_learning_rate(lr_schedules, optimizer, epoch):
         for i, param_group in enumerate(optimizer.param_groups):
-            param_group["lr"] = 1e-4
-            #param_group["lr"] = lr_schedules[i].get_learning_rate(epoch)
-            print("stiamo qua e inizia lo scheduling", epoch, "lr", param_group["lr"])
+            param_group["lr"] = lr_schedules[i].get_learning_rate(epoch)
+            logging.info(f"We are at epoch {epoch} with lr {param_group['lr']}")
 
     def empirical_stat(latent_vecs, indices):
         lat_mat = torch.zeros(0).cuda()
@@ -368,23 +353,21 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         {
 
             "params": decoder.parameters(),
-            "lr": 1e-4
+            "lr": lr_schedules[0].get_learning_rate(0)
         }
     ]
 
     if autoencoder == True:
         print("Using torch.nn.Embedding")
         pretrained_embeddings = torch.tensor([[0.],[1.]])
-
-        #lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
         lat_vecs = torch.nn.Embedding.from_pretrained(pretrained_embeddings)
+        #lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
         # torch.nn.init.normal_(
         #     lat_vecs.weight.data,
         #     0.0,
         #     get_spec_with_default(specs, "CodeInitStdDev", 1.0)
         #     / math.sqrt(latent_size),
         # )
-
         logging.debug(
             "initialized with mean magnitude {}".format(
                 get_mean_latent_vector_magnitude(lat_vecs)
@@ -396,7 +379,6 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         #         "lr": lr_schedules[0].get_learning_rate(0),
         #     }
         # )
-
         logging.info(
             "Number of shape code parameters: {} (# codes {}, code dim {})".format(
                 lat_vecs.num_embeddings * lat_vecs.embedding_dim,
@@ -406,13 +388,13 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
         )
 
     else:
-        print("Using MeshCNN")
+        logging.info(f"Using MeshCNN")
         opt = TestOptions().parse()
         opt.serial_batches = True
         model = create_model(opt)
 
     loss_mse = torch.nn.MSELoss()
-    optimizer_all = torch.optim.Adam(decoder.parameters(), lr=1e-4)
+    optimizer_all = torch.optim.Adam(optimize)
 
     loss_log = []
     lr_log = []
@@ -474,7 +456,7 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
 
         decoder.train()
 
-        #adjust_learning_rate(lr_schedules, optimizer_all, epoch)
+        adjust_learning_rate(lr_schedules, optimizer_all, epoch)
 
         for data in sdf_loader:
             sdf_data = torch.tensor(data["samples"].reshape(-1, 4))
@@ -502,37 +484,26 @@ def main_function(experiment_directory, continue_from, batch_split, autoencoder)
             pred_sdf = decoder(input)
             chunk_loss = loss_mse(pred_sdf, sdf_gt)
             if do_code_regularization:
-                print("Sto usando la code regularization")
                 l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1))
                 reg_loss = (
                     code_reg_lambda * min(1, epoch / 100) * l2_size_loss
                 ) / num_sdf_samples
                 chunk_loss = chunk_loss + reg_loss.to(device)
+                logging.debug("latent_loss = {}".format(reg_loss))
             logging.debug("recon_loss = {}".format(loss_mse(pred_sdf, sdf_gt)))
-
-
             chunk_loss = chunk_loss + alpha * decoder.get_lipschitz_loss()
-
             logging.debug("with_lip_loss = {}".format(alpha * decoder.get_lipschitz_loss()))
-
             chunk_loss.backward()
-
             batch_loss += chunk_loss.item()
-
             logging.debug("loss = {}".format(batch_loss))
-
             loss_log.append(batch_loss)
-
             if grad_clip is not None:
-                print("non ci vai mai qui")
                 torch.nn.utils.clip_grad_norm_(decoder.parameters(), grad_clip)
-
             optimizer_all.step()
-
         end = time.time()
         seconds_elapsed = end - start
         timing_log.append(seconds_elapsed)
-        #lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
+        lr_log.append([schedule.get_learning_rate(epoch) for schedule in lr_schedules])
         if autoencoder == True:
             lat_mag_log.append(get_mean_latent_vector_magnitude(lat_vecs))
 
