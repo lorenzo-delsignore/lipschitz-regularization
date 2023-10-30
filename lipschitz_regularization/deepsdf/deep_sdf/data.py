@@ -201,8 +201,6 @@ class SDFSamples(BaseDataset):
         # edge_features = mesh.extract_features()
         #edge_features = pad(edge_features, self.opt.ninput_edges)
         #meta["edge_features"] = (edge_features - self.mean) / self.std
-
-        meta["samples"] = unpack_sdf_samples(filename_npz, self.subsample)
         meta["idx"] = idx
         if self.load_ram:
             meta["samples"] = unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample)
