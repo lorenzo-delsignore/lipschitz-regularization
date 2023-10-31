@@ -5,12 +5,9 @@ import argparse
 import json
 import logging
 import os
-import random
 import time
 import torch
 from pathlib import Path
-import random
-import trimesh
 import numpy as np
 
 import lipschitz_regularization.deepsdf.deep_sdf
@@ -104,26 +101,17 @@ if __name__ == "__main__":
             args.data_source, split
         )
     )
-    # random_items = random.sample(npz_filenames, 2)
     path_sdf_A = Path(npz_filenames[0])
-    # path_sdf_A = Path("C:\\Users\\loren\\Desktop\\RepoBitbucket\\lipschitz-regularization\\lipschitz_regularization\\deepsdf\\data\\simple_dataset\\train\\0\\0.npz")
     path_folder_A = path_sdf_A.parent
-    # latent_code_B = torch.load(path_folder_A / (path_sdf_A.stem + '.pth'))[0]
     latent_code_A = torch.tensor([0.0]).cuda()
-    # obj_file_A = trimesh.load(path_folder_A / (path_sdf_A.stem + '.obj'))
-    # vertices_A = obj_file_A.vertices
     vertices_A = np.load(npz_filenames[0])
     vertices_A = torch.tensor(
         np.concatenate((vertices_A["pos"][:, :3], vertices_A["neg"][:, :3]))
     ).cuda()
 
     path_sdf_B = Path(npz_filenames[1])
-    # path_sdf_B = Path("C:\\Users\\loren\\Desktop\\RepoBitbucket\\lipschitz-regularization\\lipschitz_regularization\\deepsdf\\data\\simple_dataset\\train\\1\1.npz")
     path_folder_B = path_sdf_B.parent
-    # latent_code_A = torch.load(path_folder_B / (path_sdf_B.stem + '.pth'))[0]
     latent_code_B = torch.tensor([1.0]).cuda()
-    # obj_file_B = trimesh.load(path_folder_A / (path_sdf_A.stem + '.obj'))
-    # vertices_B = obj_file_B.vertices
     vertices_B = np.load(npz_filenames[1])
     vertices_B = torch.tensor(
         np.concatenate((vertices_B["pos"][:, :3], vertices_B["neg"][:, :3]))

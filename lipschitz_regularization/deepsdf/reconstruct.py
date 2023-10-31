@@ -244,12 +244,9 @@ if __name__ == "__main__":
             latent_code = torch.tensor(
                 load_latet_codes["latent_codes"]["weight"][data["idx"]]
             ).cuda()
-            # mesh_filename = Path(data["mesh"][0].file).stem
-            # mesh_folder = Path(data["mesh"][0].file).parent
-            # mesh_path = mesh_folder / mesh_filename
             mesh_path = (
                 Path(
-                    r"C:\Users\loren\Desktop\RepoBitbucket\lipschitz-regularization\lipschitz_regularization\deepsdf\data\simple_dataset\train"
+                    args.experiment_directory
                 )
                 / str(data["idx"][0])
                 / str(data["idx"][0])

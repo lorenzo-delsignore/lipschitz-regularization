@@ -145,10 +145,8 @@ class SDFSamples(BaseDataset):
     ):
         BaseDataset.__init__(self, TestOptions().parse())
         self.subsample = subsample
-
         self.data_source = data_source
         self.load_ram = load_ram
-
         # self.obj = get_obj_filenames(split)
         self.npyfiles = get_instance_filenames(data_source, split)
         # self.size = len(self.obj)
