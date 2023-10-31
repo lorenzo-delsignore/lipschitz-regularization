@@ -4,3 +4,5 @@ Shape interpolation is a critical task in computer graphics and 3D modeling, and
 ![Interpolation between Sphere and Torus](images/sphere_torus.png)
 
 This is an implementation of the paper [Learning Smooth Neural Functions via Lipschitz Regularization](https://research.nvidia.com/labs/toronto-ai/lip-mlp/lipmlp_final.pdf)
+
+The model weights and the interpolation between a Sphere and Torus is available [here](https://drive.google.com/drive/folders/1Cr3JA6I8CvJZzK3ivughkSfly9NajQUO?usp=sharing). Additional studies on the performance of this technique using more complex shapes (e.g. humans) reveal the possibility of oversmoothing, where the model fails to learn the correct reconstruction of the shape.
