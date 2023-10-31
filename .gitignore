@@ -3,4 +3,5 @@
 checkpoints
 .vscode
 __pycache__
-human_seg
+data
+build
